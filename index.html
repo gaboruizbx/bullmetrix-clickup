@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bullmetrix — ClickUp Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <div class="login-logo">
+        <span class="logo-mark">BM</span>
+        <span class="logo-text">Bullmetrix</span>
+      </div>
+      <h1 class="login-title">ClickUp Assistant</h1>
+      <p class="login-sub">Creá, editá y buscá tareas sin fricción</p>
+      <div class="login-form">
+        <label class="field-label">Tu API Key de ClickUp</label>
+        <input type="password" id="login-key" class="login-input" placeholder="pk_..." autocomplete="off" />
+        <p class="login-hint">Settings → Apps → API Token en tu ClickUp</p>
+        <button class="login-btn" onclick="doLogin()">Entrar</button>
+        <p class="login-error" id="login-error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" class="main-app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-mark sm">BM</span>
+        <span class="sidebar-brand">Bullmetrix</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="crear" onclick="switchTab('crear', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Crear tarea
+        </button>
+        <button class="nav-item" data-tab="editar" onclick="switchTab('editar', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 11.5V14h2.5l7-7L9 4.5l-7 7zm11.7-6.7a.96.96 0 000-1.4l-1.1-1.1a.96.96 0 00-1.4 0l-1 1 2.5 2.5 1-1z" fill="currentColor"/></svg>
+          Editar tarea
+        </button>
+        <button class="nav-item" data-tab="buscar" onclick="switchTab('buscar', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Buscar
+        </button>
+        <button class="nav-item" data-tab="historial" onclick="switchTab('historial', this)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Historial
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <span class="user-avatar" id="user-initials">?</span>
+          <span class="user-name" id="user-name">Cargando...</span>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Cerrar sesión">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <!-- CREAR -->
+      <section class="tab-panel active" id="tab-crear">
+        <div class="panel-header">
+          <h2 class="panel-title">Nueva tarea</h2>
+          <p class="panel-sub">Completá los campos y la tarea se crea en ClickUp al instante</p>
+        </div>
+        <div class="form-card">
+          <div class="field-group full">
+            <label class="field-label">Nombre de la tarea <span class="required">*</span></label>
+            <input type="text" id="c-nombre" class="field-input" placeholder="Ej: Reporte mensual Flybondi — Enero 2026" />
+          </div>
+          <div class="field-group full">
+            <label class="field-label">Lista / Cliente <span class="required">*</span></label>
+            <select id="c-lista" class="field-select">
+              <option value="">— seleccionar lista —</option>
+              <optgroup label="Flybondi">
+                <option value="901408387467">Flybondi — Interno</option>
+                <option value="901408387482">Flybondi — Pedidos de clientes</option>
+                <option value="901408387485">Flybondi — Iniciativas</option>
+                <option value="901408387491">Flybondi — Optimización</option>
+                <option value="901408387498">Flybondi — Relación con clientes</option>
+                <option value="901408387506">Flybondi — Dashboards</option>
+              </optgroup>
+              <optgroup label="Frávega">
+                <option value="900200176989">Frávega — Team Task</option>
+                <option value="900200176991">Frávega — Optimización</option>
+                <option value="900200176993">Frávega — Optimización Search</option>
+                <option value="900200176992">Frávega — Optimización Meta</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Tipo de tarea</label>
+              <select id="c-tipo" class="field-select">
+                <option value="">— ninguno —</option>
+                <option value="0">Kick Off</option>
+                <option value="1">Iniciativas</option>
+                <option value="2">Pedidos del cliente</option>
+                <option value="3">Análisis y experimentos</option>
+                <option value="4">Optimizaciones</option>
+                <option value="5">Auditoría</option>
+                <option value="6">Relación con clientes</option>
+                <option value="7">Dashboards</option>
+                <option value="8">Brainstorming</option>
+                <option value="9">Interno</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Sub-categoría</label>
+              <select id="c-sub" class="field-select">
+                <option value="">— ninguna —</option>
+                <option value="0">Reporte Mensual</option>
+                <option value="1">Reporte puntual</option>
+                <option value="2">Análisis ad-hoc</option>
+                <option value="3">Budget</option>
+                <option value="4">Nuevas Campañas</option>
+                <option value="5">Experimentos</option>
+                <option value="6">Seguimiento</option>
+                <option value="7">Mantenimiento</option>
+                <option value="8">Nuevo dashboard</option>
+                <option value="9">Plan. puntual</option>
+                <option value="10">Plan. mensual</option>
+                <option value="11">Piezas</option>
+                <option value="12">Com. Interna</option>
+                <option value="13">Capacitaciones</option>
+                <option value="14">Com. con cliente</option>
+                <option value="15">Minuta</option>
+                <option value="16">Tracking</option>
+                <option value="17">Automatizaciones</option>
+                <option value="18">Opt. campañas</option>
+                <option value="19">Audiencias</option>
+                <option value="20">Exactivización</option>
+                <option value="21">QBR</option>
+                <option value="22">SBR</option>
+                <option value="23">Equipo</option>
+                <option value="24">Calendarización</option>
+                <option value="25">Reuniones</option>
+                <option value="26">Proyectos</option>
+                <option value="27">Lanzamiento</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">POD</label>
+              <select id="c-pod" class="field-select">
+                <option value="">— ninguno —</option>
+                <option value="0">POD #1</option>
+                <option value="1">POD #2</option>
+                <option value="2">POD #3</option>
+                <option value="3">POD #4</option>
+                <option value="4">POD #5</option>
+                <option value="5">POD #6</option>
+                <option value="6">POD #7</option>
+                <option value="7">POD #8</option>
+                <option value="8">POD #9</option>
+                <option value="9">POD #10</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Estado</label>
+              <select id="c-estado" class="field-select">
+                <option value="to do">To Do</option>
+                <option value="doing">Doing</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Prioridad</label>
+              <select id="c-prioridad" class="field-select">
+                <option value="">— ninguna —</option>
+                <option value="urgent">Urgente</option>
+                <option value="high">Alta</option>
+                <option value="normal">Normal</option>
+                <option value="low">Baja</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Tiempo registrado (min)</label>
+              <input type="number" id="c-tiempo" class="field-input" placeholder="Ej: 30" min="0" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="crearTarea()">Crear tarea</button>
+            <button class="btn-ghost" onclick="limpiarFormCrear()">Limpiar</button>
+          </div>
+          <div class="toast" id="toast-crear"></div>
+        </div>
+      </section>
+
+      <!-- EDITAR -->
+      <section class="tab-panel" id="tab-editar">
+        <div class="panel-header">
+          <h2 class="panel-title">Editar tarea</h2>
+          <p class="panel-sub">Ingresá el ID o URL de la tarea para cargarla y modificarla</p>
+        </div>
+        <div class="form-card">
+          <div class="field-row" style="align-items:flex-end">
+            <div class="field-group" style="flex:1">
+              <label class="field-label">ID o URL de la tarea</label>
+              <input type="text" id="e-id" class="field-input" placeholder="86b9t5j4v  o  https://app.clickup.com/t/86b9t5j4v" />
+            </div>
+            <button class="btn-secondary" onclick="cargarTarea()">Cargar</button>
+          </div>
+          <div id="edit-form" class="edit-form hidden">
+            <div class="divider"></div>
+            <div class="field-group full">
+              <label class="field-label">Nombre</label>
+              <input type="text" id="e-nombre" class="field-input" />
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Tipo de tarea</label>
+                <select id="e-tipo" class="field-select">
+                  <option value="">— ninguno —</option>
+                  <option value="0">Kick Off</option>
+                  <option value="1">Iniciativas</option>
+                  <option value="2">Pedidos del cliente</option>
+                  <option value="3">Análisis y experimentos</option>
+                  <option value="4">Optimizaciones</option>
+                  <option value="5">Auditoría</option>
+                  <option value="6">Relación con clientes</option>
+                  <option value="7">Dashboards</option>
+                  <option value="8">Brainstorming</option>
+                  <option value="9">Interno</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Sub-categoría</label>
+                <select id="e-sub" class="field-select">
+                  <option value="">— ninguna —</option>
+                  <option value="0">Reporte Mensual</option>
+                  <option value="1">Reporte puntual</option>
+                  <option value="2">Análisis ad-hoc</option>
+                  <option value="3">Budget</option>
+                  <option value="4">Nuevas Campañas</option>
+                  <option value="5">Experimentos</option>
+                  <option value="6">Seguimiento</option>
+                  <option value="7">Mantenimiento</option>
+                  <option value="8">Nuevo dashboard</option>
+                  <option value="17">Automatizaciones</option>
+                  <option value="18">Opt. campañas</option>
+                  <option value="25">Reuniones</option>
+                  <option value="27">Lanzamiento</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">POD</label>
+                <select id="e-pod" class="field-select">
+                  <option value="">— ninguno —</option>
+                  <option value="0">POD #1</option>
+                  <option value="1">POD #2</option>
+                  <option value="2">POD #3</option>
+                  <option value="3">POD #4</option>
+                  <option value="4">POD #5</option>
+                  <option value="5">POD #6</option>
+                  <option value="6">POD #7</option>
+                  <option value="7">POD #8</option>
+                  <option value="8">POD #9</option>
+                  <option value="9">POD #10</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Estado</label>
+                <select id="e-estado" class="field-select">
+                  <option value="to do">To Do</option>
+                  <option value="doing">Doing</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Prioridad</label>
+                <select id="e-prioridad" class="field-select">
+                  <option value="">— ninguna —</option>
+                  <option value="urgent">Urgente</option>
+                  <option value="high">Alta</option>
+                  <option value="normal">Normal</option>
+                  <option value="low">Baja</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Agregar tiempo (min)</label>
+                <input type="number" id="e-tiempo" class="field-input" placeholder="Ej: 45" min="0" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" onclick="guardarEdicion()">Guardar cambios</button>
+              <a id="e-link" href="#" target="_blank" class="btn-ghost">Ver en ClickUp</a>
+            </div>
+            <div class="toast" id="toast-editar"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUSCAR -->
+      <section class="tab-panel" id="tab-buscar">
+        <div class="panel-header">
+          <h2 class="panel-title">Buscar tareas</h2>
+          <p class="panel-sub">Buscá por palabras clave — matchea términos parciales</p>
+        </div>
+        <div class="search-bar">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="search-q" class="search-input" placeholder="Ej: reporte flybondi, optimización meta, POD 3..." onkeydown="if(event.key==='Enter')buscar()" />
+          <button class="btn-secondary" onclick="buscar()">Buscar</button>
+        </div>
+        <div id="search-results" class="results-area">
+          <div class="empty-state">
+            <p>Ingresá un término para buscar entre tus tareas</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORIAL -->
+      <section class="tab-panel" id="tab-historial">
+        <div class="panel-header">
+          <h2 class="panel-title">Historial de sesión</h2>
+          <p class="panel-sub">Tareas creadas o editadas en esta sesión</p>
+        </div>
+        <div id="hist-list" class="hist-list">
+          <div class="empty-state"><p>Todavía no creaste ni editaste tareas en esta sesión</p></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
