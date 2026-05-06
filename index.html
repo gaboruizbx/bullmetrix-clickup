@@ -23,7 +23,12 @@
       <div class="login-form">
         <label class="field-label">Tu API Key de ClickUp</label>
         <input type="password" id="login-key" class="login-input" placeholder="pk_..." autocomplete="off" />
-        <p class="login-hint">Settings → Apps → API Token en tu ClickUp</p>
+        <p class="login-hint">
+          ¿Dónde está? 
+          <a href="https://app.clickup.com/settings/apps" target="_blank" style="color:#d4ff4e;text-decoration:none">
+            ClickUp → Settings → Apps → API Token →
+          </a>
+        </p>
         <button class="login-btn" onclick="doLogin()">Entrar</button>
         <p class="login-error" id="login-error"></p>
       </div>
@@ -82,21 +87,7 @@
           <div class="field-group full">
             <label class="field-label">Lista / Cliente <span class="required">*</span></label>
             <select id="c-lista" class="field-select">
-              <option value="">— seleccionar lista —</option>
-              <optgroup label="Flybondi">
-                <option value="901408387467">Flybondi — Interno</option>
-                <option value="901408387482">Flybondi — Pedidos de clientes</option>
-                <option value="901408387485">Flybondi — Iniciativas</option>
-                <option value="901408387491">Flybondi — Optimización</option>
-                <option value="901408387498">Flybondi — Relación con clientes</option>
-                <option value="901408387506">Flybondi — Dashboards</option>
-              </optgroup>
-              <optgroup label="Frávega">
-                <option value="900200176989">Frávega — Team Task</option>
-                <option value="900200176991">Frávega — Optimización</option>
-                <option value="900200176993">Frávega — Optimización Search</option>
-                <option value="900200176992">Frávega — Optimización Meta</option>
-              </optgroup>
+              <option value="">— cargando listas... —</option>
             </select>
           </div>
           <div class="field-row">
