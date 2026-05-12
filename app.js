@@ -193,6 +193,7 @@ function switchTab(name, btn) {
   document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
   if (btn) btn.classList.add('active');
+  if (name === 'myday') renderMyday();
 }
 
 // ─── API ─────────────────────────────────────────────────
@@ -258,7 +259,7 @@ async function crearTarea() {
     var minutos = parseInt(document.getElementById('c-tiempo').value) || 0;
     if (minutos > 0) await registrarTiempo(data.id, minutos);
     showToast('toast-crear', 'ok', '✓ Tarea creada: <a href="' + data.url + '" target="_blank">' + esc(data.name) + '</a>');
-    addHist(data.name, data.url, 'creada');
+    addHist(data.name, data.url, 'creada', document.getElementById('c-lista-search') ? document.getElementById('c-lista-search').value : '');
     limpiarFormCrear();
   } catch(e) {
     showToast('toast-crear', 'err', 'Error: ' + e.message);
@@ -326,7 +327,7 @@ async function guardarEdicion() {
     var minutos = parseInt(document.getElementById('e-tiempo').value) || 0;
     if (minutos > 0) await registrarTiempo(currentTaskId, minutos);
     showToast('toast-editar', 'ok', '✓ Cambios guardados. <a href="https://app.clickup.com/t/' + currentTaskId + '" target="_blank">Ver en ClickUp</a>');
-    addHist(document.getElementById('e-nombre').value, 'https://app.clickup.com/t/' + currentTaskId, 'editada');
+    addHist(document.getElementById('e-nombre').value, 'https://app.clickup.com/t/' + currentTaskId, 'editada', '');
   } catch(e) {
     showToast('toast-editar', 'err', 'Error: ' + e.message);
   } finally {
@@ -391,7 +392,36 @@ function cargarParaEditar(id) {
 
 // ─── HISTORIAL ───────────────────────────────────────────
 
-function addHist(name, url, action) {
+function getTareasHoy() {
+  var hoy = new Date().toDateString();
+  var data = localStorage.getItem('bm_myday');
+  if (!data) return [];
+  try { var p = JSON.parse(data); return p.fecha === hoy ? (p.tareas || []) : []; } catch(e) { return []; }
+}
+
+function saveTareasHoy(tareas) {
+  localStorage.setItem('bm_myday', JSON.stringify({ fecha: new Date().toDateString(), tareas: tareas }));
+}
+
+function renderMyday() {
+  var tareas = getTareasHoy();
+  var cont = document.getElementById('myday-list');
+  var count = document.getElementById('myday-count');
+  if (count) count.textContent = tareas.length + (tareas.length === 1 ? ' tarea' : ' tareas');
+  if (!tareas.length) { cont.innerHTML = '<div class="empty-state"><p>Todavía no registraste tareas hoy</p></div>'; return; }
+  cont.innerHTML = '';
+  tareas.slice().reverse().forEach(function(t) {
+    var item = document.createElement('div'); item.className = 'myday-item';
+    item.innerHTML = '<div><div class="mname">' + esc(t.name) + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">' + esc(t.lista || '') + '</div></div>' +
+      '<div class="mmeta"><span class="maction">' + t.action + '</span>' +
+      '<span class="mtime">' + t.time + '</span>' +
+      '<a href="' + t.url + '" target="_blank">ver en ClickUp →</a></div>';
+    cont.appendChild(item);
+  });
+}
+
+function addHist(name, url, action, listaNombre) {
   var cont = document.getElementById('hist-list');
   if (histCount === 0) cont.innerHTML = '';
   histCount++;
@@ -400,6 +430,11 @@ function addHist(name, url, action) {
   item.innerHTML = '<span class="hname">' + esc(name) + '<span class="haction">' + action + '</span></span>' +
     '<span class="hmeta"><span class="htime">' + now + '</span><a href="' + url + '" target="_blank">ver</a></span>';
   cont.insertBefore(item, cont.firstChild);
+  var tareas = getTareasHoy();
+  tareas.push({ name: name, url: url, action: action, time: now, lista: listaNombre || '' });
+  saveTareasHoy(tareas);
+  var count = document.getElementById('myday-count');
+  if (count) count.textContent = tareas.length + (tareas.length === 1 ? ' tarea' : ' tareas');
 }
 
 // ─── UTILS ───────────────────────────────────────────────
