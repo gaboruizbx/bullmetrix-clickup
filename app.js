@@ -66,57 +66,90 @@ window.addEventListener('load', function() {
 
 // ─── LISTAS DINÁMICAS ────────────────────────────────────
 
-// Almacén de listas cargadas
-var todasLasListas = []; // [{id, name, spaceName}]
+// Listas — carga lazy al primer tipeo, una sola llamada
+var todasLasListas = [];
+var listasListas = false;
+var cargandoListas = false;
 
-async function cargarListasDinamicas() {
+function cargarListasDinamicas() { /* lazy — se carga al primer tipeo */ }
+
+async function asegurarListasCargadas() {
+  if (listasListas) return;
+  if (cargandoListas) {
+    while (cargandoListas) await new Promise(function(r) { setTimeout(r, 200); });
+    return;
+  }
+
+  // Intentar cargar desde localStorage (cache de 24hs)
+  var cacheKey = 'bm_listas_' + WORKSPACE;
+  var cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      var parsed = JSON.parse(cached);
+      var age = Date.now() - parsed.ts;
+      if (age < 24 * 60 * 60 * 1000) { // menos de 24hs
+        todasLasListas = parsed.listas;
+        listasListas = true;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  cargandoListas = true;
   var input = document.getElementById('c-lista-search');
-  if (input) input.placeholder = 'Cargando listas...';
+  if (input) input.placeholder = 'Cargando listas (primera vez)...';
+
   try {
+    // Obtener spaces primero (1 llamada)
     var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
     var spaces = spacesData.spaces || [];
-    // Procesar en lotes de 5 para no saturar rate limit de ClickUp
-    var spaceResults = [];
-    var batchSize = 5;
-    for (var b = 0; b < spaces.length; b += batchSize) {
-      var batch = spaces.slice(b, b + batchSize);
-      var batchResults = await Promise.all(batch.map(async function(space) {
-      var allLists = [];
-      try {
-        var results = await Promise.all([
-          ck('/space/' + space.id + '/list?archived=false').catch(function() { return { lists: [] }; }),
-          ck('/space/' + space.id + '/folder?archived=false').catch(function() { return { folders: [] }; })
-        ]);
-        allLists = allLists.concat(results[0].lists || []);
-        var folders = results[1].folders || [];
-        if (folders.length > 0) {
-          var folderLists = await Promise.all(
-            folders.map(function(f) {
-              return ck('/folder/' + f.id + '/list?archived=false').catch(function() { return { lists: [] }; });
-            })
-          );
-          folderLists.forEach(function(fl) { allLists = allLists.concat(fl.lists || []); });
-        }
-      } catch(e) {}
-      return { space: space, lists: allLists };
-    }));
     todasLasListas = [];
-    spaceResults.forEach(function(r) {
-      r.lists.forEach(function(l) {
-        todasLasListas.push({ id: l.id, name: l.name, spaceName: r.space.name });
-      });
-    });
+
+    // Para cada space: 1 llamada a folders (que incluye sus listas)
+    // Usar el endpoint de folders con include_lists=true
+    for (var i = 0; i < spaces.length; i++) {
+      var space = spaces[i];
+      try {
+        // folders con sus listas incluidas en una sola llamada
+        var foldersResp = await ck('/space/' + space.id + '/folder?archived=false&include_lists=true');
+        (foldersResp.folders || []).forEach(function(folder) {
+          (folder.lists || []).forEach(function(l) {
+            todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name });
+          });
+        });
+        // Listas directas del space (sin folder)
+        var listsResp = await ck('/space/' + space.id + '/list?archived=false');
+        (listsResp.lists || []).forEach(function(l) {
+          todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name });
+        });
+      } catch(e) {}
+      // Pausa de 200ms entre spaces para no saturar
+      await new Promise(function(r) { setTimeout(r, 200); });
+    }
+
+    // Guardar en cache
+    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), listas: todasLasListas }));
+    listasListas = true;
     if (input) input.placeholder = 'Escribí para buscar: flybondi, frávega...';
   } catch(e) {
-    if (input) input.placeholder = 'Error cargando listas';
+    console.error('Error cargando listas:', e);
+    if (input) input.placeholder = 'Error — recargá la página';
   }
+  cargandoListas = false;
 }
 
-function filtrarListas(query) {
+async function filtrarListas(query) {
   var dd = document.getElementById('lista-dropdown');
   var hidden = document.getElementById('c-lista');
   dd.innerHTML = '';
   if (!query.trim()) { dd.classList.remove('open'); return; }
+  // Cargar listas si es la primera vez
+  if (!listasListas) {
+    dd.innerHTML = '<div class="ac-option" style="color:#888;cursor:default">⏳ Cargando listas...</div>';
+    dd.classList.add('open');
+    await asegurarListasCargadas();
+    dd.innerHTML = '';
+  }
 
   var words = query.toLowerCase().split(/\s+/).filter(Boolean);
   var matches = todasLasListas.filter(function(l) {
