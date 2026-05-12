@@ -197,10 +197,15 @@ function ck(path, opts, key) {
 async function registrarTiempo(taskId, minutos) {
   var durMs = minutos * 60 * 1000;
   var start = Date.now() - durMs;
-  // Endpoint correcto v2
-  return ck('/task/' + taskId + '/time', {
+  // Endpoint de timesheet global (aparece en hoja de horas)
+  return ck('/team/' + WORKSPACE + '/time_entries', {
     method: 'POST',
-    body: JSON.stringify({ start: start, duration: durMs, billable: false })
+    body: JSON.stringify({
+      tid: taskId,
+      start: start,
+      duration: durMs,
+      billable: false
+    })
   });
 }
 
