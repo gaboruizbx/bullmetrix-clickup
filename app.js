@@ -72,22 +72,40 @@ async function cargarListasDinamicas() {
   try {
     var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
     var spaces = spacesData.spaces || [];
-    sel.innerHTML = '<option value="">— seleccionar lista —</option>';
-    for (var i = 0; i < spaces.length; i++) {
-      var space = spaces[i];
+    // Cargar todos los spaces en paralelo
+    var spaceResults = await Promise.all(spaces.map(async function(space) {
       var allLists = [];
-      try { var dl = await ck('/space/' + space.id + '/list?archived=false'); allLists = allLists.concat(dl.lists || []); } catch(e) {}
       try {
-        var fd = await ck('/space/' + space.id + '/folder?archived=false');
-        for (var j = 0; j < (fd.folders||[]).length; j++) {
-          try { var fl = await ck('/folder/' + fd.folders[j].id + '/list?archived=false'); allLists = allLists.concat(fl.lists || []); } catch(e) {}
+        var results = await Promise.all([
+          ck('/space/' + space.id + '/list?archived=false').catch(function() { return { lists: [] }; }),
+          ck('/space/' + space.id + '/folder?archived=false').catch(function() { return { folders: [] }; })
+        ]);
+        allLists = allLists.concat(results[0].lists || []);
+        var folders = results[1].folders || [];
+        if (folders.length > 0) {
+          var folderLists = await Promise.all(
+            folders.map(function(f) {
+              return ck('/folder/' + f.id + '/list?archived=false').catch(function() { return { lists: [] }; });
+            })
+          );
+          folderLists.forEach(function(fl) { allLists = allLists.concat(fl.lists || []); });
         }
       } catch(e) {}
-      if (!allLists.length) continue;
-      var g = document.createElement('optgroup'); g.label = space.name;
-      allLists.forEach(function(l) { var o = document.createElement('option'); o.value = l.id; o.textContent = l.name; g.appendChild(o); });
+      return { space: space, lists: allLists };
+    }));
+    sel.innerHTML = '<option value="">— seleccionar lista —</option>';
+    spaceResults.forEach(function(r) {
+      if (!r.lists.length) return;
+      var g = document.createElement('optgroup');
+      g.label = r.space.name;
+      r.lists.forEach(function(l) {
+        var o = document.createElement('option');
+        o.value = l.id;
+        o.textContent = l.name;
+        g.appendChild(o);
+      });
       sel.appendChild(g);
-    }
+    });
   } catch(e) { sel.innerHTML = '<option value="">Error cargando listas</option>'; }
 }
 
