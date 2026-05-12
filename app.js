@@ -66,7 +66,7 @@ window.addEventListener('load', function() {
 
 // ─── LISTAS DINÁMICAS ────────────────────────────────────
 
-// Listas — carga lazy al primer tipeo, una sola llamada
+// Listas — carga lazy al primer tipeo
 var todasLasListas = [];
 var listasListas = false;
 var cargandoListas = false;
@@ -79,61 +79,35 @@ async function asegurarListasCargadas() {
     while (cargandoListas) await new Promise(function(r) { setTimeout(r, 200); });
     return;
   }
-
-  // Intentar cargar desde localStorage (cache de 24hs)
-  var cacheKey = 'bm_listas_' + WORKSPACE;
-  var cached = localStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      var parsed = JSON.parse(cached);
-      var age = Date.now() - parsed.ts;
-      if (age < 24 * 60 * 60 * 1000) { // menos de 24hs
-        todasLasListas = parsed.listas;
-        listasListas = true;
-        return;
-      }
-    } catch(e) {}
-  }
-
   cargandoListas = true;
   var input = document.getElementById('c-lista-search');
-  if (input) input.placeholder = 'Cargando listas (primera vez)...';
-
+  if (input) input.placeholder = 'Cargando listas...';
   try {
-    // Obtener spaces primero (1 llamada)
     var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
     var spaces = spacesData.spaces || [];
     todasLasListas = [];
-
-    // Para cada space: 1 llamada a folders (que incluye sus listas)
-    // Usar el endpoint de folders con include_lists=true
-    for (var i = 0; i < spaces.length; i++) {
-      var space = spaces[i];
-      try {
-        // folders con sus listas incluidas en una sola llamada
-        var foldersResp = await ck('/space/' + space.id + '/folder?archived=false&include_lists=true');
-        (foldersResp.folders || []).forEach(function(folder) {
-          (folder.lists || []).forEach(function(l) {
-            todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name });
-          });
-        });
-        // Listas directas del space (sin folder)
-        var listsResp = await ck('/space/' + space.id + '/list?archived=false');
-        (listsResp.lists || []).forEach(function(l) {
-          todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name });
-        });
-      } catch(e) {}
-      // Pausa de 200ms entre spaces para no saturar
-      await new Promise(function(r) { setTimeout(r, 200); });
+    // De a 3 spaces con pausa para respetar rate limit
+    for (var b = 0; b < spaces.length; b += 3) {
+      var batch = spaces.slice(b, b + 3);
+      for (var i = 0; i < batch.length; i++) {
+        var space = batch[i];
+        try {
+          var r1 = await ck('/space/' + space.id + '/list?archived=false').catch(function() { return { lists: [] }; });
+          (r1.lists || []).forEach(function(l) { todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name }); });
+          var r2 = await ck('/space/' + space.id + '/folder?archived=false').catch(function() { return { folders: [] }; });
+          var folders = r2.folders || [];
+          for (var j = 0; j < folders.length; j++) {
+            var r3 = await ck('/folder/' + folders[j].id + '/list?archived=false').catch(function() { return { lists: [] }; });
+            (r3.lists || []).forEach(function(l) { todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name }); });
+          }
+        } catch(e) {}
+      }
+      if (b + 3 < spaces.length) await new Promise(function(r) { setTimeout(r, 500); });
     }
-
-    // Guardar en cache
-    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), listas: todasLasListas }));
     listasListas = true;
     if (input) input.placeholder = 'Escribí para buscar: flybondi, frávega...';
   } catch(e) {
-    console.error('Error cargando listas:', e);
-    if (input) input.placeholder = 'Error — recargá la página';
+    if (input) input.placeholder = 'Error — intentá de nuevo';
   }
   cargandoListas = false;
 }
@@ -235,26 +209,19 @@ function ck(path, opts, key) {
 async function registrarTiempo(taskId, minutos) {
   var durMs = minutos * 60 * 1000;
   var start = Date.now() - durMs;
-  // ClickUp requiere strings para start y duration
+  // ClickUp time entries API: números, no strings
   var resp = await ck('/team/' + WORKSPACE + '/time_entries', {
     method: 'POST',
     body: JSON.stringify({
       tid: taskId,
-      start: String(start),
-      duration: String(durMs),
-      billable: false
+      start: start,
+      duration: durMs,
+      billable: false,
+      assignee: currentUserId
     })
   });
-  // Si falla con team endpoint, intentar con el de la tarea directamente
   if (resp.err) {
-    resp = await ck('/task/' + taskId + '/time', {
-      method: 'POST',
-      body: JSON.stringify({
-        start: String(start),
-        duration: String(durMs),
-        billable: false
-      })
-    });
+    console.error('Error time_entries:', resp.err);
   }
   return resp;
 }
@@ -279,11 +246,9 @@ async function crearTarea() {
   var tipo = document.getElementById('c-tipo').value;
   var sub  = document.getElementById('c-sub').value;
   var pod  = document.getElementById('c-pod').value;
-  var prio = document.getElementById('c-prioridad').value;
   if (tipo !== '') body.custom_fields.push({ id: CAMPOS.tipo, value: parseInt(tipo) });
   if (sub  !== '') body.custom_fields.push({ id: CAMPOS.sub,  value: parseInt(sub)  });
   if (pod  !== '') body.custom_fields.push({ id: CAMPOS.pod,  value: parseInt(pod)  });
-  if (prio) body.priority = prio;
 
   var btn = document.querySelector('#tab-crear .btn-primary');
   btn.disabled = true; btn.textContent = 'Creando...';
@@ -351,11 +316,9 @@ async function guardarEdicion() {
   var tipo = document.getElementById('e-tipo').value;
   var sub  = document.getElementById('e-sub').value;
   var pod  = document.getElementById('e-pod').value;
-  var prio = document.getElementById('e-prioridad').value;
   if (tipo !== '') body.custom_fields.push({ id: CAMPOS.tipo, value: parseInt(tipo) });
   if (sub  !== '') body.custom_fields.push({ id: CAMPOS.sub,  value: parseInt(sub)  });
   if (pod  !== '') body.custom_fields.push({ id: CAMPOS.pod,  value: parseInt(pod)  });
-  if (prio) body.priority = prio;
   var btn = document.querySelector('#tab-editar .btn-primary');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
