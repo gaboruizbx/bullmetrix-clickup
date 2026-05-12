@@ -75,7 +75,12 @@ async function cargarListasDinamicas() {
   try {
     var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
     var spaces = spacesData.spaces || [];
-    var spaceResults = await Promise.all(spaces.map(async function(space) {
+    // Procesar en lotes de 5 para no saturar rate limit de ClickUp
+    var spaceResults = [];
+    var batchSize = 5;
+    for (var b = 0; b < spaces.length; b += batchSize) {
+      var batch = spaces.slice(b, b + batchSize);
+      var batchResults = await Promise.all(batch.map(async function(space) {
       var allLists = [];
       try {
         var results = await Promise.all([
@@ -197,16 +202,28 @@ function ck(path, opts, key) {
 async function registrarTiempo(taskId, minutos) {
   var durMs = minutos * 60 * 1000;
   var start = Date.now() - durMs;
-  // Endpoint de timesheet global (aparece en hoja de horas)
-  return ck('/team/' + WORKSPACE + '/time_entries', {
+  // ClickUp requiere strings para start y duration
+  var resp = await ck('/team/' + WORKSPACE + '/time_entries', {
     method: 'POST',
     body: JSON.stringify({
       tid: taskId,
-      start: start,
-      duration: durMs,
+      start: String(start),
+      duration: String(durMs),
       billable: false
     })
   });
+  // Si falla con team endpoint, intentar con el de la tarea directamente
+  if (resp.err) {
+    resp = await ck('/task/' + taskId + '/time', {
+      method: 'POST',
+      body: JSON.stringify({
+        start: String(start),
+        duration: String(durMs),
+        billable: false
+      })
+    });
+  }
+  return resp;
 }
 
 // ─── CREAR ───────────────────────────────────────────────
