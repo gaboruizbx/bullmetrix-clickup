@@ -86,9 +86,11 @@
           </div>
           <div class="field-group full">
             <label class="field-label">Lista / Cliente <span class="required">*</span></label>
-            <select id="c-lista" class="field-select">
-              <option value="">— cargando listas... —</option>
-            </select>
+            <div class="autocomplete-wrap" id="lista-wrap">
+              <input type="text" id="c-lista-search" class="field-input" placeholder="Escribí para buscar: flybondi, frávega..." autocomplete="off" oninput="filtrarListas(this.value)" onfocus="mostrarDropdown()" onblur="ocultarDropdown()" />
+              <input type="hidden" id="c-lista" />
+              <div class="autocomplete-dropdown" id="lista-dropdown"></div>
+            </div>
           </div>
           <div class="field-row">
             <div class="field-group">

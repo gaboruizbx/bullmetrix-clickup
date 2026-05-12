@@ -66,13 +66,15 @@ window.addEventListener('load', function() {
 
 // ─── LISTAS DINÁMICAS ────────────────────────────────────
 
+// Almacén de listas cargadas
+var todasLasListas = []; // [{id, name, spaceName}]
+
 async function cargarListasDinamicas() {
-  var sel = document.getElementById('c-lista');
-  sel.innerHTML = '<option value="">Cargando listas...</option>';
+  var input = document.getElementById('c-lista-search');
+  if (input) input.placeholder = 'Cargando listas...';
   try {
     var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
     var spaces = spacesData.spaces || [];
-    // Cargar todos los spaces en paralelo
     var spaceResults = await Promise.all(spaces.map(async function(space) {
       var allLists = [];
       try {
@@ -93,20 +95,83 @@ async function cargarListasDinamicas() {
       } catch(e) {}
       return { space: space, lists: allLists };
     }));
-    sel.innerHTML = '<option value="">— seleccionar lista —</option>';
+    todasLasListas = [];
     spaceResults.forEach(function(r) {
-      if (!r.lists.length) return;
-      var g = document.createElement('optgroup');
-      g.label = r.space.name;
       r.lists.forEach(function(l) {
-        var o = document.createElement('option');
-        o.value = l.id;
-        o.textContent = l.name;
-        g.appendChild(o);
+        todasLasListas.push({ id: l.id, name: l.name, spaceName: r.space.name });
       });
-      sel.appendChild(g);
     });
-  } catch(e) { sel.innerHTML = '<option value="">Error cargando listas</option>'; }
+    if (input) input.placeholder = 'Escribí para buscar: flybondi, frávega...';
+  } catch(e) {
+    if (input) input.placeholder = 'Error cargando listas';
+  }
+}
+
+function filtrarListas(query) {
+  var dd = document.getElementById('lista-dropdown');
+  var hidden = document.getElementById('c-lista');
+  dd.innerHTML = '';
+  if (!query.trim()) { dd.classList.remove('open'); return; }
+
+  var words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  var matches = todasLasListas.filter(function(l) {
+    var full = (l.spaceName + ' ' + l.name).toLowerCase();
+    return words.every(function(w) { return full.includes(w); });
+  });
+
+  if (!matches.length) {
+    dd.innerHTML = '<div class="ac-option" style="color:#555;cursor:default">Sin resultados</div>';
+    dd.classList.add('open');
+    return;
+  }
+
+  // Agrupar por space
+  var groups = {};
+  matches.forEach(function(l) {
+    if (!groups[l.spaceName]) groups[l.spaceName] = [];
+    groups[l.spaceName].push(l);
+  });
+
+  Object.keys(groups).forEach(function(spaceName) {
+    var gl = document.createElement('div'); gl.className = 'ac-group-label'; gl.textContent = spaceName;
+    dd.appendChild(gl);
+    groups[spaceName].forEach(function(l) {
+      var opt = document.createElement('div'); opt.className = 'ac-option';
+      opt.innerHTML = resaltarMatch(esc(l.name), words);
+      opt.onmousedown = function(e) {
+        e.preventDefault();
+        seleccionarLista(l.id, l.name, l.spaceName);
+      };
+      dd.appendChild(opt);
+    });
+  });
+  dd.classList.add('open');
+}
+
+function seleccionarLista(id, name, spaceName) {
+  document.getElementById('c-lista').value = id;
+  document.getElementById('c-lista-search').value = spaceName + ' — ' + name;
+  document.getElementById('lista-dropdown').classList.remove('open');
+}
+
+function mostrarDropdown() {
+  var q = document.getElementById('c-lista-search').value;
+  if (q.trim()) filtrarListas(q);
+}
+
+function ocultarDropdown() {
+  setTimeout(function() {
+    document.getElementById('lista-dropdown').classList.remove('open');
+  }, 150);
+}
+
+function resaltarMatch(text, words) {
+  var result = text;
+  words.forEach(function(w) {
+    var re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    result = result.replace(re, '<mark>$1</mark>');
+  });
+  return result;
 }
 
 // ─── NAV ─────────────────────────────────────────────────
