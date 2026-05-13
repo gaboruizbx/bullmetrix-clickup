@@ -66,12 +66,13 @@ window.addEventListener('load', function() {
 
 // ─── LISTAS DINÁMICAS ────────────────────────────────────
 
-// Listas — carga lazy al primer tipeo
+// Listas — carga desde Google Sheets (una sola llamada, instantáneo)
 var todasLasListas = [];
 var listasListas = false;
 var cargandoListas = false;
+var SHEET_ID = '18NsFOORnJdPq-hEbaLZQ3d_ro9cAoLEDKQBhlYYs0HY';
 
-function cargarListasDinamicas() { /* lazy — se carga al primer tipeo */ }
+function cargarListasDinamicas() { /* carga al primer tipeo desde Google Sheets */ }
 
 async function asegurarListasCargadas() {
   if (listasListas) return;
@@ -79,35 +80,45 @@ async function asegurarListasCargadas() {
     while (cargandoListas) await new Promise(function(r) { setTimeout(r, 200); });
     return;
   }
+
+  // Cache 24hs
+  var cacheKey = 'bm_listas_sheet';
+  try {
+    var cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      var parsed = JSON.parse(cached);
+      if (Date.now() - parsed.ts < 24 * 60 * 60 * 1000) {
+        todasLasListas = parsed.listas;
+        listasListas = true;
+        return;
+      }
+    }
+  } catch(e) {}
+
   cargandoListas = true;
   var input = document.getElementById('c-lista-search');
   if (input) input.placeholder = 'Cargando listas...';
+
   try {
-    var spacesData = await ck('/team/' + WORKSPACE + '/space?archived=false');
-    var spaces = spacesData.spaces || [];
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=0';
+    var resp = await fetch(url);
+    var csv = await resp.text();
+    var lines = csv.split('\n').slice(1);
     todasLasListas = [];
-    // De a 3 spaces con pausa para respetar rate limit
-    for (var b = 0; b < spaces.length; b += 3) {
-      var batch = spaces.slice(b, b + 3);
-      for (var i = 0; i < batch.length; i++) {
-        var space = batch[i];
-        try {
-          var r1 = await ck('/space/' + space.id + '/list?archived=false').catch(function() { return { lists: [] }; });
-          (r1.lists || []).forEach(function(l) { todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name }); });
-          var r2 = await ck('/space/' + space.id + '/folder?archived=false').catch(function() { return { folders: [] }; });
-          var folders = r2.folders || [];
-          for (var j = 0; j < folders.length; j++) {
-            var r3 = await ck('/folder/' + folders[j].id + '/list?archived=false').catch(function() { return { lists: [] }; });
-            (r3.lists || []).forEach(function(l) { todasLasListas.push({ id: l.id, name: l.name, spaceName: space.name }); });
-          }
-        } catch(e) {}
-      }
-      if (b + 3 < spaces.length) await new Promise(function(r) { setTimeout(r, 500); });
-    }
+    lines.forEach(function(line) {
+      if (!line.trim()) return;
+      var cols = line.split(',');
+      var id    = (cols[0] || '').trim().replace(/"/g, '');
+      var name  = (cols[1] || '').trim().replace(/"/g, '');
+      var space = (cols[2] || '').trim().replace(/"/g, '');
+      if (id && name) todasLasListas.push({ id: id, name: name, spaceName: space });
+    });
+    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), listas: todasLasListas }));
     listasListas = true;
     if (input) input.placeholder = 'Escribí para buscar: flybondi, frávega...';
   } catch(e) {
-    if (input) input.placeholder = 'Error — intentá de nuevo';
+    console.error('Error cargando listas desde Sheets:', e);
+    if (input) input.placeholder = 'Error cargando — recargá';
   }
   cargandoListas = false;
 }
