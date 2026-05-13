@@ -66,62 +66,287 @@ window.addEventListener('load', function() {
 
 // ─── LISTAS DINÁMICAS ────────────────────────────────────
 
-// Listas — carga desde Google Sheets (una sola llamada, instantáneo)
-var todasLasListas = [];
-var listasListas = false;
+// ─── LISTAS HARDCODEADAS ─────────────────────────────────
+// Para agregar un cliente: agregá filas con { id, name, spaceName }
+// y guardá el archivo en GitHub.
+var todasLasListas = [
+  // FLYBONDI
+  {id:"901408387467",name:"Interno",spaceName:"BM - Flybondi"},
+  {id:"901408387473",name:"Kick Off",spaceName:"BM - Flybondi"},
+  {id:"901408387482",name:"Pedidos de clientes",spaceName:"BM - Flybondi"},
+  {id:"901408387485",name:"Iniciativas",spaceName:"BM - Flybondi"},
+  {id:"901408387491",name:"Optimización",spaceName:"BM - Flybondi"},
+  {id:"901408387498",name:"Relación con clientes",spaceName:"BM - Flybondi"},
+  {id:"901408387506",name:"Dashboards",spaceName:"BM - Flybondi"},
+  {id:"901408387510",name:"Brainstorming",spaceName:"BM - Flybondi"},
+  {id:"901408387512",name:"Auditoría",spaceName:"BM - Flybondi"},
+  // FRÁVEGA
+  {id:"900200176989",name:"Team Task",spaceName:"BM - Frávega"},
+  {id:"900200176991",name:"Optimización DP / DV / YT",spaceName:"BM - Frávega"},
+  {id:"900200176993",name:"Optimización Search",spaceName:"BM - Frávega"},
+  {id:"900200176992",name:"Optimización Meta",spaceName:"BM - Frávega"},
+  // CAMUZZI
+  {id:"901408387121",name:"Kick Off",spaceName:"BM - CAMUZZI"},
+  {id:"901408387127",name:"Pedidos de Clientes",spaceName:"BM - CAMUZZI"},
+  {id:"901408387131",name:"Iniciativas",spaceName:"BM - CAMUZZI"},
+  {id:"901408387136",name:"Optimización",spaceName:"BM - CAMUZZI"},
+  {id:"901408387142",name:"Relación con clientes",spaceName:"BM - CAMUZZI"},
+  {id:"901408387150",name:"Dashboards",spaceName:"BM - CAMUZZI"},
+  {id:"901408387160",name:"Brainstorming",spaceName:"BM - CAMUZZI"},
+  {id:"901408387168",name:"Auditoría",spaceName:"BM - CAMUZZI"},
+  {id:"901408387175",name:"Interno",spaceName:"BM - CAMUZZI"},
+  // EQUIFAX
+  {id:"901408387348",name:"Kick Off",spaceName:"BM - Equifax"},
+  {id:"901408387354",name:"Pedidos de clientes",spaceName:"BM - Equifax"},
+  {id:"901408387359",name:"Iniciativas",spaceName:"BM - Equifax"},
+  {id:"901408387365",name:"Optimización",spaceName:"BM - Equifax"},
+  {id:"901408387373",name:"Relación con clientes",spaceName:"BM - Equifax"},
+  {id:"901408387380",name:"Dashboards",spaceName:"BM - Equifax"},
+  {id:"901408387385",name:"Brainstorming",spaceName:"BM - Equifax"},
+  {id:"901408387388",name:"Auditoría",spaceName:"BM - Equifax"},
+  {id:"901408387393",name:"Interno",spaceName:"BM - Equifax"},
+  // BIND
+  {id:"901412489402",name:"Kick off",spaceName:"BIND"},
+  {id:"901412489394",name:"Pedidos Cliente",spaceName:"BIND"},
+  {id:"901412489397",name:"Iniciativas",spaceName:"BIND"},
+  {id:"901412489403",name:"Optimización",spaceName:"BIND"},
+  {id:"901412489400",name:"Analisis | Experimentos",spaceName:"BIND"},
+  {id:"901412489399",name:"Relación con clientes",spaceName:"BIND"},
+  {id:"901412489396",name:"Dashboards",spaceName:"BIND"},
+  {id:"901412489395",name:"Auditoria",spaceName:"BIND"},
+  {id:"901412489401",name:"Brainstorming",spaceName:"BIND"},
+  {id:"901412489428",name:"Minutas",spaceName:"BIND"},
+  // PAGGO
+  {id:"901415899217",name:"Interno",spaceName:"BM - Paggo"},
+  {id:"901415899360",name:"Kick Off",spaceName:"BM - Paggo"},
+  {id:"901415899392",name:"Pedidos de clientes",spaceName:"BM - Paggo"},
+  {id:"901415899497",name:"Iniciativas",spaceName:"BM - Paggo"},
+  {id:"901415899316",name:"Optimización",spaceName:"BM - Paggo"},
+  {id:"901415899216",name:"Relación con clientes",spaceName:"BM - Paggo"},
+  {id:"901415899589",name:"Dashboards",spaceName:"BM - Paggo"},
+  {id:"901415899561",name:"Brainstorming",spaceName:"BM - Paggo"},
+  {id:"901415899572",name:"Auditoría",spaceName:"BM - Paggo"},
+  // SODIMAC UY
+  {id:"901408247272",name:"Kick off",spaceName:"BM - Sodimac UY"},
+  {id:"901403361479",name:"Pedidos Cliente",spaceName:"BM - Sodimac UY"},
+  {id:"900200607086",name:"Iniciativas",spaceName:"BM - Sodimac UY"},
+  {id:"901408357128",name:"Optimización",spaceName:"BM - Sodimac UY"},
+  {id:"901408357151",name:"Relación con clientes",spaceName:"BM - Sodimac UY"},
+  {id:"901408357161",name:"Dashboards",spaceName:"BM - Sodimac UY"},
+  {id:"901408357179",name:"Auditoria",spaceName:"BM - Sodimac UY"},
+  {id:"900200607089",name:"Brainstorming",spaceName:"BM - Sodimac UY"},
+  {id:"901408357195",name:"Interno",spaceName:"BM - Sodimac UY"},
+  // SODIMAC ARG
+  {id:"901408357210",name:"Kick Off",spaceName:"BM - Sodimac ARG"},
+  {id:"901401966048",name:"Pedidos Cliente",spaceName:"BM - Sodimac ARG"},
+  {id:"901401966068",name:"Iniciativas",spaceName:"BM - Sodimac ARG"},
+  {id:"901408357226",name:"Optimización",spaceName:"BM - Sodimac ARG"},
+  {id:"901408357244",name:"Relación con clientes",spaceName:"BM - Sodimac ARG"},
+  {id:"901408357318",name:"Dashboards",spaceName:"BM - Sodimac ARG"},
+  {id:"901408357278",name:"Auditoria",spaceName:"BM - Sodimac ARG"},
+  {id:"901403361650",name:"Brainstorming",spaceName:"BM - Sodimac ARG"},
+  {id:"901408357304",name:"Interno",spaceName:"BM - Sodimac ARG"},
+  // DESPEGAR
+  {id:"900200611065",name:"Inbox",spaceName:"BM - Despegar"},
+  {id:"900200611066",name:"Brainstorming",spaceName:"BM - Despegar"},
+  {id:"900200611064",name:"Optimización",spaceName:"BM - Despegar"},
+  {id:"900200611062",name:"Seguimiento",spaceName:"BM - Despegar"},
+  {id:"900200611068",name:"Pedidos",spaceName:"BM - Despegar"},
+  // LEMON
+  {id:"900201309310",name:"Analisis | Experimentos",spaceName:"BM - LEMON"},
+  {id:"900201309311",name:"Pedidos",spaceName:"BM - LEMON"},
+  {id:"901407904394",name:"Optimización",spaceName:"BM - LEMON"},
+  {id:"901407907085",name:"Auditoría",spaceName:"BM - LEMON"},
+  {id:"901407907106",name:"Relación con clientes",spaceName:"BM - LEMON"},
+  {id:"901409797063",name:"Interno",spaceName:"BM - LEMON"},
+  // RAPPI
+  {id:"901408374159",name:"Pedidos Cliente",spaceName:"BM - Rappi"},
+  {id:"901408374175",name:"Iniciativas",spaceName:"BM - Rappi"},
+  {id:"901408374189",name:"Optimización",spaceName:"BM - Rappi"},
+  {id:"901408374217",name:"Relación con Clientes",spaceName:"BM - Rappi"},
+  {id:"901408374276",name:"Dashboards",spaceName:"BM - Rappi"},
+  {id:"901408374298",name:"Auditoría",spaceName:"BM - Rappi"},
+  {id:"901408374321",name:"Brainstorming",spaceName:"BM - Rappi"},
+  {id:"901408374330",name:"Interno",spaceName:"BM - Rappi"},
+  // NALDO
+  {id:"901408408831",name:"Pedidos cliente",spaceName:"BM - Naldo"},
+  {id:"901408408873",name:"Optimización",spaceName:"BM - Naldo"},
+  {id:"901408408904",name:"Iniciativas",spaceName:"BM - Naldo"},
+  {id:"901408408920",name:"Relación con Clientes",spaceName:"BM - Naldo"},
+  {id:"901408408933",name:"Dashboards",spaceName:"BM - Naldo"},
+  {id:"901408408948",name:"Auditoría",spaceName:"BM - Naldo"},
+  {id:"901408408970",name:"Brainstorming",spaceName:"BM - Naldo"},
+  {id:"901408408984",name:"Interno",spaceName:"BM - Naldo"},
+  // CINEMARK
+  {id:"901408376032",name:"Kick Off",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376141",name:"Iniciativas",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376156",name:"Optimización",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376193",name:"Relación con clientes",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376216",name:"Auditoría",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376244",name:"Brainstorming",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376261",name:"Dashboards",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408376263",name:"Interno",spaceName:"BM - CinemarkHoyts"},
+  {id:"901408391102",name:"Pedidos de clientes",spaceName:"BM - CinemarkHoyts"},
+  // FORUS / UNDER ARMOUR AR
+  {id:"901408409204",name:"Pedidos cliente",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409230",name:"Iniciativas",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409240",name:"Optimización",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409272",name:"Relación con cliente",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409286",name:"Dashboards",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409287",name:"Auditoría",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409300",name:"Brainstorming",spaceName:"BM - Forus / Under AR"},
+  {id:"901408409321",name:"Interno",spaceName:"BM - Forus / Under AR"},
+  // PEUGEOT
+  {id:"901408247168",name:"Kick off",spaceName:"BM - Peugeot"},
+  {id:"901408247166",name:"Pedidos Cliente",spaceName:"BM - Peugeot"},
+  {id:"901408247172",name:"Iniciativas",spaceName:"BM - Peugeot"},
+  {id:"901408247167",name:"Optimización",spaceName:"BM - Peugeot"},
+  {id:"901408247173",name:"Relación con clientes",spaceName:"BM - Peugeot"},
+  {id:"901408247171",name:"Dashboards",spaceName:"BM - Peugeot"},
+  {id:"901408247175",name:"Auditoria",spaceName:"BM - Peugeot"},
+  {id:"901408247174",name:"Brainstorming",spaceName:"BM - Peugeot"},
+  {id:"901408247170",name:"Interno",spaceName:"BM - Peugeot"},
+  // DAEWOO
+  {id:"901408247213",name:"Kick off",spaceName:"BM - Daewoo"},
+  {id:"901408247199",name:"Pedidos Cliente",spaceName:"BM - Daewoo"},
+  {id:"901408247210",name:"Iniciativas",spaceName:"BM - Daewoo"},
+  {id:"901408247209",name:"Optimización",spaceName:"BM - Daewoo"},
+  {id:"901408247200",name:"Relación con clientes",spaceName:"BM - Daewoo"},
+  {id:"901408247207",name:"Dashboards",spaceName:"BM - Daewoo"},
+  {id:"901408247203",name:"Auditoria",spaceName:"BM - Daewoo"},
+  {id:"901408247208",name:"Brainstorming",spaceName:"BM - Daewoo"},
+  {id:"901408247211",name:"Interno",spaceName:"BM - Daewoo"},
+  // FARMACITY
+  {id:"901408294633",name:"Pedidos Cliente",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294640",name:"Iniciativas",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294634",name:"Optimización",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294641",name:"Relación con clientes",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294639",name:"Dashboards",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294643",name:"Auditoria",spaceName:"BM - Grupo Farmacity"},
+  {id:"901408294638",name:"Interno",spaceName:"BM - Grupo Farmacity"},
+  // ICARO
+  {id:"901409964304",name:"Kick off",spaceName:"BM - ICARO"},
+  {id:"901409964538",name:"Pedidos Cliente",spaceName:"BM - ICARO"},
+  {id:"901409964537",name:"Iniciativas",spaceName:"BM - ICARO"},
+  {id:"901409964403",name:"Optimización",spaceName:"BM - ICARO"},
+  {id:"901409964226",name:"Relación con Clientes",spaceName:"BM - ICARO"},
+  {id:"901409964531",name:"Dashboards",spaceName:"BM - ICARO"},
+  {id:"901409964273",name:"Auditoría",spaceName:"BM - ICARO"},
+  {id:"901409964301",name:"Brainstorming",spaceName:"BM - ICARO"},
+  {id:"901409964308",name:"Interno",spaceName:"BM - ICARO"},
+  // GALICIA PYMES
+  {id:"901410642764",name:"Analisis | Experimentos",spaceName:"BM - GALICIA PYMES"},
+  {id:"901410642449",name:"Pedidos",spaceName:"BM - GALICIA PYMES"},
+  {id:"901410643014",name:"Optimización",spaceName:"BM - GALICIA PYMES"},
+  {id:"901410643088",name:"Auditoría",spaceName:"BM - GALICIA PYMES"},
+  {id:"901410643190",name:"Relación con clientes",spaceName:"BM - GALICIA PYMES"},
+  {id:"901410642957",name:"Interno",spaceName:"BM - GALICIA PYMES"},
+  // FINVOI
+  {id:"901412151282",name:"Kick Off",spaceName:"BM - Finvoi"},
+  {id:"901412151281",name:"Pedidos Clientes",spaceName:"BM - Finvoi"},
+  {id:"901412151244",name:"Iniciativas",spaceName:"BM - Finvoi"},
+  {id:"901412151267",name:"Optimización",spaceName:"BM - Finvoi"},
+  {id:"901412151272",name:"Relación con clientes",spaceName:"BM - Finvoi"},
+  {id:"901412151286",name:"Dashboards",spaceName:"BM - Finvoi"},
+  {id:"901412151287",name:"Brainstorming",spaceName:"BM - Finvoi"},
+  {id:"901412151275",name:"Auditoría",spaceName:"BM - Finvoi"},
+  {id:"901412151234",name:"Interno",spaceName:"BM - Finvoi"},
+  // FORUS CHILE
+  {id:"901412514274",name:"Kick off",spaceName:"BM - Forus Chile"},
+  {id:"901412514267",name:"Pedidos Cliente",spaceName:"BM - Forus Chile"},
+  {id:"901412514289",name:"Iniciativas",spaceName:"BM - Forus Chile"},
+  {id:"901412514268",name:"Optimización",spaceName:"BM - Forus Chile"},
+  {id:"901412514290",name:"Relación con clientes",spaceName:"BM - Forus Chile"},
+  {id:"901412514288",name:"Dashboards",spaceName:"BM - Forus Chile"},
+  {id:"901412514293",name:"Auditoria",spaceName:"BM - Forus Chile"},
+  {id:"901412514291",name:"Brainstorming",spaceName:"BM - Forus Chile"},
+  {id:"901412514287",name:"Interno",spaceName:"BM - Forus Chile"},
+  // X-28
+  {id:"901408386961",name:"Kick Off",spaceName:"BM - X-28"},
+  {id:"901408386978",name:"Interno",spaceName:"BM - X-28"},
+  {id:"901408386983",name:"Pedidos de Clientes",spaceName:"BM - X-28"},
+  {id:"901408386987",name:"Iniciativas",spaceName:"BM - X-28"},
+  {id:"901408386996",name:"Optimización",spaceName:"BM - X-28"},
+  {id:"901408387005",name:"Relación con Clientes",spaceName:"BM - X-28"},
+  {id:"901408387014",name:"Auditoría",spaceName:"BM - X-28"},
+  {id:"901408387029",name:"Brainstorming",spaceName:"BM - X-28"},
+  // KARVI
+  {id:"901402957644",name:"Kick off",spaceName:"BM - Karvi"},
+  {id:"901402957643",name:"Pedidos Cliente",spaceName:"BM - Karvi"},
+  {id:"901402959434",name:"Iniciativas",spaceName:"BM - Karvi"},
+  {id:"901402957637",name:"Optimización",spaceName:"BM - Karvi"},
+  {id:"901402957642",name:"Analisis | Experimentos",spaceName:"BM - Karvi"},
+  {id:"901402957633",name:"Relación con clientes",spaceName:"BM - Karvi"},
+  {id:"901402957640",name:"Auditoria",spaceName:"BM - Karvi"},
+  {id:"901402957646",name:"Brainstorming",spaceName:"BM - Karvi"},
+  // RE-USE
+  {id:"901409734985",name:"Pedidos Cliente",spaceName:"BM - Re-Use"},
+  {id:"901409735175",name:"Iniciativas",spaceName:"BM - Re-Use"},
+  {id:"901409735094",name:"Auditoría",spaceName:"BM - Re-Use"},
+  {id:"901409735271",name:"Optimización",spaceName:"BM - Re-Use"},
+  {id:"901409735302",name:"Relación con clientes",spaceName:"BM - Re-Use"},
+  {id:"901409763894",name:"Interno",spaceName:"BM - Re-Use"},
+  // KANSAI - TOYOTA
+  {id:"901408375437",name:"Kick Off",spaceName:"Kansai - Toyota"},
+  {id:"901408375452",name:"Pedidos Cliente",spaceName:"Kansai - Toyota"},
+  {id:"901408375465",name:"Iniciativas",spaceName:"Kansai - Toyota"},
+  {id:"901408375327",name:"Optimización",spaceName:"Kansai - Toyota"},
+  {id:"901408375393",name:"Relacion con cliente",spaceName:"Kansai - Toyota"},
+  {id:"901408375359",name:"Dashboard",spaceName:"Kansai - Toyota"},
+  {id:"901408375263",name:"Auditoria",spaceName:"Kansai - Toyota"},
+  {id:"901408375308",name:"Brainstorming",spaceName:"Kansai - Toyota"},
+  {id:"901408375487",name:"Interno",spaceName:"Kansai - Toyota"},
+  // CREDICUOTAS
+  {id:"901408173298",name:"Kick Off",spaceName:"BM - Credicuotas"},
+  {id:"901408173343",name:"Pedidos de Cliente",spaceName:"BM - Credicuotas"},
+  {id:"901408173372",name:"Iniciativas",spaceName:"BM - Credicuotas"},
+  {id:"901408173382",name:"Optimización",spaceName:"BM - Credicuotas"},
+  {id:"901408173399",name:"Relación con Cliente",spaceName:"BM - Credicuotas"},
+  {id:"901408174426",name:"Dashboards",spaceName:"BM - Credicuotas"},
+  {id:"901408174379",name:"Auditoría",spaceName:"BM - Credicuotas"},
+  {id:"901408174406",name:"Brainstorming",spaceName:"BM - Credicuotas"},
+  {id:"901408174423",name:"Interno",spaceName:"BM - Credicuotas"},
+  // HIDROAL
+  {id:"901408772554",name:"Kick off",spaceName:"BM Hidroal"},
+  {id:"901408772551",name:"Pedidos Cliente",spaceName:"BM Hidroal"},
+  {id:"901408772558",name:"Iniciativas",spaceName:"BM Hidroal"},
+  {id:"901408772552",name:"Optimización",spaceName:"BM Hidroal"},
+  {id:"901408772559",name:"Relación con clientes",spaceName:"BM Hidroal"},
+  {id:"901408772557",name:"Dashboards",spaceName:"BM Hidroal"},
+  {id:"901408772563",name:"Auditoria",spaceName:"BM Hidroal"},
+  {id:"901408772562",name:"Brainstorming",spaceName:"BM Hidroal"},
+  {id:"901408772556",name:"Interno",spaceName:"BM Hidroal"},
+  // MEDIA SERVICES
+  {id:"901412689673",name:"Kick Off",spaceName:"BM - Media Services"},
+  {id:"901412689677",name:"Pedidos de Clientes",spaceName:"BM - Media Services"},
+  {id:"901412689729",name:"Iniciativas",spaceName:"BM - Media Services"},
+  {id:"901412689691",name:"Optimización",spaceName:"BM - Media Services"},
+  {id:"901412689707",name:"Relación con clientes",spaceName:"BM - Media Services"},
+  {id:"901412689710",name:"Dashboards",spaceName:"BM - Media Services"},
+  {id:"901412689715",name:"Auditoría",spaceName:"BM - Media Services"},
+  // THE CHEMIST LOOK
+  {id:"901413972491",name:"Kick off",spaceName:"BM - The Chemist Look"},
+  {id:"901413972504",name:"Inbox",spaceName:"BM - The Chemist Look"},
+  {id:"901413972503",name:"Pedidos Cliente",spaceName:"BM - The Chemist Look"},
+  {id:"901413972490",name:"Iniciativas",spaceName:"BM - The Chemist Look"},
+  {id:"901413972502",name:"Optimización",spaceName:"BM - The Chemist Look"},
+  {id:"901413972501",name:"Analisis | Experimentos",spaceName:"BM - The Chemist Look"},
+  {id:"901413972500",name:"Relación con clientes",spaceName:"BM - The Chemist Look"},
+  {id:"901413972492",name:"Auditoria",spaceName:"BM - The Chemist Look"},
+  {id:"901413972506",name:"Interno",spaceName:"BM - The Chemist Look"},
+  // GWSTORE
+  {id:"901414389885",name:"Analisis | Experimentos",spaceName:"BM - GWSTORE"},
+  {id:"901414389847",name:"Pedidos",spaceName:"BM - GWSTORE"},
+  {id:"901414389938",name:"Optimización",spaceName:"BM - GWSTORE"},
+  {id:"901414389971",name:"Auditoría",spaceName:"BM - GWSTORE"},
+  {id:"901414389994",name:"Relación con clientes",spaceName:"BM - GWSTORE"},
+  {id:"901414389924",name:"Interno",spaceName:"BM - GWSTORE"}
+];
+var listasListas = true; // ya están cargadas
 var cargandoListas = false;
-var SHEET_ID = '18NsFOORnJdPq-hEbaLZQ3d_ro9cAoLEDKQBhlYYs0HY';
 
-function cargarListasDinamicas() { /* carga al primer tipeo desde Google Sheets */ }
-
-async function asegurarListasCargadas() {
-  if (listasListas) return;
-  if (cargandoListas) {
-    while (cargandoListas) await new Promise(function(r) { setTimeout(r, 200); });
-    return;
-  }
-
-  // Cache 24hs
-  var cacheKey = 'bm_listas_sheet';
-  try {
-    var cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      var parsed = JSON.parse(cached);
-      if (Date.now() - parsed.ts < 24 * 60 * 60 * 1000) {
-        todasLasListas = parsed.listas;
-        listasListas = true;
-        return;
-      }
-    }
-  } catch(e) {}
-
-  cargandoListas = true;
-  var input = document.getElementById('c-lista-search');
-  if (input) input.placeholder = 'Cargando listas...';
-
-  try {
-    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=0';
-    var resp = await fetch(url);
-    var csv = await resp.text();
-    var lines = csv.split('\n').slice(1);
-    todasLasListas = [];
-    lines.forEach(function(line) {
-      if (!line.trim()) return;
-      var cols = line.split(',');
-      var id    = (cols[0] || '').trim().replace(/"/g, '');
-      var name  = (cols[1] || '').trim().replace(/"/g, '');
-      var space = (cols[2] || '').trim().replace(/"/g, '');
-      if (id && name) todasLasListas.push({ id: id, name: name, spaceName: space });
-    });
-    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), listas: todasLasListas }));
-    listasListas = true;
-    if (input) input.placeholder = 'Escribí para buscar: flybondi, frávega...';
-  } catch(e) {
-    console.error('Error cargando listas desde Sheets:', e);
-    if (input) input.placeholder = 'Error cargando — recargá';
-  }
-  cargandoListas = false;
-}
+function cargarListasDinamicas() { /* listas hardcodeadas, carga instantánea */ }
+async function asegurarListasCargadas() { /* no-op */ }
 
 async function filtrarListas(query) {
   var dd = document.getElementById('lista-dropdown');
