@@ -506,7 +506,7 @@ async function crearTarea() {
 
 function limpiarFormCrear() {
   ['c-nombre','c-tiempo'].forEach(function(id) { document.getElementById(id).value = ''; });
-  ['c-tipo','c-sub','c-pod','c-prioridad'].forEach(function(id) { document.getElementById(id).selectedIndex = 0; });
+  ['c-tipo','c-sub','c-pod'].forEach(function(id) { document.getElementById(id).selectedIndex = 0; });
   document.getElementById('c-estado').value = 'to do';
 }
 
